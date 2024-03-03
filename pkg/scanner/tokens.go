@@ -79,3 +79,15 @@ func NewToken(kind TokenType, lexeme string, literal any, line int) Token {
 func (t Token) Lexeme() string {
 	return t.lexeme
 }
+
+func (t Token) Kind() TokenType {
+	return t.kind
+}
+
+func (t Token) Literal() any {
+	return t.literal
+}
+
+func (t Token) Line() int {
+	return t.line
+}

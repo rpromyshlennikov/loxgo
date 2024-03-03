@@ -7,6 +7,9 @@ import (
 type AstPrinter struct{}
 
 func (p AstPrinter) Sprint(expr Expr) string {
+	if expr == nil {
+		return ""
+	}
 	return expr.accept(p).(string)
 }
 
