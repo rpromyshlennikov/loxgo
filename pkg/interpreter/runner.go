@@ -11,11 +11,18 @@ import (
 )
 
 type LoxGo struct {
-	hadError bool
+	hadError        bool
+	hadRuntimeError bool
+
+	interpreter Interpreter
 }
 
 func New() *LoxGo {
-	return &LoxGo{hadError: false}
+	return &LoxGo{
+		hadError:        false,
+		hadRuntimeError: false,
+		interpreter:     Interpreter{},
+	}
 }
 
 func (lox *LoxGo) RunFile(fileName string) {
@@ -27,6 +34,9 @@ func (lox *LoxGo) RunFile(fileName string) {
 	lox.Run(string(sources))
 	if lox.hadError {
 		os.Exit(65)
+	}
+	if lox.hadRuntimeError {
+		os.Exit(70)
 	}
 }
 
@@ -45,6 +55,7 @@ func (lox *LoxGo) RunPrompt() {
 		}
 		lox.Run(input)
 		lox.hadError = false
+		lox.hadRuntimeError = false
 	}
 	if err := scannr.Err(); err != nil {
 		log.Println(err)
@@ -64,6 +75,16 @@ func (lox *LoxGo) Run(sources string) {
 	// For now, just print the AST.
 	//fmt.Println((&parser.AstPrinter{}).Sprint(astTree))
 	fmt.Println(parser.AstPrinter{}.Sprint(astTree))
+	if lox.hadError {
+		return
+	}
+
+	// Trying to interpret.
+	result, err := lox.interpreter.Interpret(astTree)
+	if err != nil {
+		lox.runtimeError(err)
+	}
+	fmt.Println(result)
 }
 
 func (lox *LoxGo) erro(line int, message string) {
@@ -76,4 +97,16 @@ func (lox *LoxGo) report(line int, where string, message string) {
 		log.Fatalln(err)
 	}
 	lox.hadError = true
+}
+
+func (lox *LoxGo) runtimeError(err error) {
+	rErr, ok := err.(*RuntimeError)
+	if !ok {
+		log.Fatalln(err)
+	}
+	_, err = fmt.Fprintln(os.Stderr, "[line ", rErr.token.Line(), "] Runtime error: "+rErr.message)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	lox.hadRuntimeError = true
 }
