@@ -24,7 +24,7 @@ type Token = scanner.Token
 type TokenType = scanner.TokenType
 
 type Expr interface {
-	accept(visitor Visitor) any
+	Accept(visitor Visitor) any
 }
 `)
 	if err != nil {
@@ -58,7 +58,7 @@ func defineVisitor(builder *strings.Builder, types []string) {
 	for _, kind := range types {
 		className, _ := classProps(kind)
 		_, err = builder.WriteString(
-			"\tvisit" + className + "(*" + className + ") any\n")
+			"\tVisit" + className + "(*" + className + ") any\n")
 		if err != nil {
 			panic(err)
 		}
@@ -95,18 +95,33 @@ func defineType(builder *strings.Builder, kind string) {
 	}
 
 	// Producing constructor
+	_, err = builder.WriteString("func New" + className + "(")
+	if err != nil {
+		panic(err)
+	}
+	parameters := make([]string, 0, len(fields))
+	for _, field := range fields {
+		parameters = append(parameters, strings.ToLower(field[:1])+field[1:])
+		if err != nil {
+			panic(err)
+		}
+	}
+	_, err = builder.WriteString(strings.Join(parameters, ", "))
+	if err != nil {
+		panic(err)
+	}
 	_, err = builder.WriteString(
-		"func New" + className +
-			"(" + fieldsList + ") *" +
-			className + " {\n" +
-			"\tthis := " + className + "{}\n")
+		") *" + className + " {\n" +
+			"\tthis := " + className + "{}\n",
+	)
 	if err != nil {
 		panic(err)
 	}
 	for _, field := range fields {
 		name := strings.Split(field, " ")[0]
 		_, err = builder.WriteString(
-			"\tthis." + name + " = " + name + "\n")
+			"\tthis." + name + " = " + strings.ToLower(name[:1]) + name[1:] + "\n",
+		)
 		if err != nil {
 			panic(err)
 		}
@@ -118,9 +133,10 @@ func defineType(builder *strings.Builder, kind string) {
 
 	// Producing accept method.
 	_, err = builder.WriteString(
-		"func (" + strings.ToLower(className[:1]) + " *" + className + ") accept(visitor Visitor) any {\n" +
-			"\treturn visitor.visit" + className + "(" + strings.ToLower(className[:1]) + ")\n" +
-			"}\n")
+		"func (" + strings.ToLower(className[:1]) + " *" + className + ") Accept(visitor Visitor) any {\n" +
+			"\treturn visitor.Visit" + className + "(" + strings.ToLower(className[:1]) + ")\n" +
+			"}\n",
+	)
 	if err != nil {
 		panic(err)
 	}

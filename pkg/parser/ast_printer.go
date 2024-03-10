@@ -10,32 +10,32 @@ func (p AstPrinter) Sprint(expr Expr) string {
 	if expr == nil {
 		return ""
 	}
-	return expr.accept(p).(string)
+	return expr.Accept(p).(string)
 }
 
-func (p AstPrinter) visitUnary(unary *Unary) any {
-	return p.parenthesize(unary.operator.Lexeme(), unary.right)
+func (p AstPrinter) VisitUnary(unary *Unary) any {
+	return p.parenthesize(unary.Operator.Lexeme(), unary.Right)
 }
 
-func (p AstPrinter) visitBinary(binary *Binary) any {
-	return p.parenthesize(binary.operator.Lexeme(), binary.left, binary.right)
+func (p AstPrinter) VisitBinary(binary *Binary) any {
+	return p.parenthesize(binary.Operator.Lexeme(), binary.Left, binary.Right)
 }
 
-func (p AstPrinter) visitLiteral(literal *Literal) any {
-	if literal.value == nil {
+func (p AstPrinter) VisitLiteral(literal *Literal) any {
+	if literal.Value == nil {
 		return "nil"
 	}
-	return fmt.Sprint(literal.value)
+	return fmt.Sprint(literal.Value)
 }
 
-func (p AstPrinter) visitGrouping(grouping *Grouping) any {
-	return p.parenthesize("group", grouping.expression)
+func (p AstPrinter) VisitGrouping(grouping *Grouping) any {
+	return p.parenthesize("group", grouping.Expression)
 }
 
 func (p AstPrinter) parenthesize(name string, exprs ...Expr) any {
 	str := "(" + name
 	for _, expr := range exprs {
-		str += " " + expr.accept(p).(string)
+		str += " " + expr.Accept(p).(string)
 	}
 	str += ")"
 	return str
