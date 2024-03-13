@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/parser"
+	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/parser/ast"
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/scanner"
 )
 
@@ -26,7 +26,7 @@ func NewRuntimeError(token scanner.Token, message string) *RuntimeError {
 
 type Interpreter struct{}
 
-func (i Interpreter) Interpret(expr parser.Expr) (result string, err error) {
+func (i Interpreter) Interpret(expr ast.Expr) (result string, err error) {
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			rErr, ok := recovered.(*RuntimeError)
@@ -46,7 +46,7 @@ func (i Interpreter) Interpret(expr parser.Expr) (result string, err error) {
 	return i.stringify(value), nil
 }
 
-func (i Interpreter) VisitUnary(unary *parser.Unary) any {
+func (i Interpreter) VisitUnary(unary *ast.Unary) any {
 	right := i.evaluate(unary.Right)
 	switch unary.Operator.Kind() {
 	case scanner.BANG:
@@ -59,7 +59,7 @@ func (i Interpreter) VisitUnary(unary *parser.Unary) any {
 	return nil
 }
 
-func (i Interpreter) VisitBinary(binary *parser.Binary) any {
+func (i Interpreter) VisitBinary(binary *ast.Binary) any {
 	left := i.evaluate(binary.Left)
 	right := i.evaluate(binary.Right)
 	switch binary.Operator.Kind() {
@@ -123,15 +123,15 @@ func (i Interpreter) VisitBinary(binary *parser.Binary) any {
 	return nil
 }
 
-func (i Interpreter) VisitLiteral(literal *parser.Literal) any {
+func (i Interpreter) VisitLiteral(literal *ast.Literal) any {
 	return literal.Value
 }
 
-func (i Interpreter) VisitGrouping(grouping *parser.Grouping) any {
+func (i Interpreter) VisitGrouping(grouping *ast.Grouping) any {
 	return i.evaluate(grouping.Expression)
 }
 
-func (i Interpreter) evaluate(expr parser.Expr) any {
+func (i Interpreter) evaluate(expr ast.Expr) any {
 	return expr.Accept(i)
 }
 

@@ -6,4 +6,4 @@ It's a tree walk interpreter of [Lox language](https://craftinginterpreters.com/
 ## Interpret a file
 `make build && ./loxgo [file]`
 ## Produce Expression types
-`make astgen && ./astgenerator pkg/parser/`
+`make astgen && ./astgenerator pkg/parser/ast`
