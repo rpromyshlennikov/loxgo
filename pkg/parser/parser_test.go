@@ -4,11 +4,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/plugins"
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/scanner"
 )
 
 func TestParser_Parse(t *testing.T) {
-	pprinter := AstPrinter{}
+	pprinter := plugins.AstPrinter{}
 
 	t.Run("Success all expressions", func(t *testing.T) {
 		scannr := scanner.NewScanner("3 / 2 + 2 * 4 - 1 > 5 == true != 4 <= 5 + (1 - 2)", nil)

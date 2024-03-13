@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/parser"
+	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/plugins"
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/scanner"
 )
 
 func TestInterpreter_Interpret(t *testing.T) {
-	pprinter := parser.AstPrinter{}
+	pprinter := plugins.AstPrinter{}
 
 	t.Run("Success all expressions", func(t *testing.T) {
 		// arrange

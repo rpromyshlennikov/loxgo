@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/parser"
+	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/plugins"
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/scanner"
 )
 
@@ -74,7 +75,7 @@ func (lox *LoxGo) Run(sources string) {
 
 	// For now, just print the AST.
 	//fmt.Println((&parser.AstPrinter{}).Sprint(astTree))
-	fmt.Println(parser.AstPrinter{}.Sprint(astTree))
+	fmt.Println(plugins.AstPrinter{}.Sprint(astTree))
 	if lox.hadError {
 		return
 	}
