@@ -4,17 +4,18 @@ import (
 	"fmt"
 
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/errors"
+	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/parser/ast"
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/scanner"
 )
 
 type Parser struct {
-	tokens  []Token
+	tokens  []scanner.Token
 	current int
 
 	errReporter errors.Reporter
 }
 
-func NewParser(tokens []Token, errReporter errors.Reporter) *Parser {
+func NewParser(tokens []scanner.Token, errReporter errors.Reporter) *Parser {
 	return &Parser{
 		tokens:  tokens,
 		current: 0,
@@ -23,7 +24,7 @@ func NewParser(tokens []Token, errReporter errors.Reporter) *Parser {
 	}
 }
 
-func (p *Parser) Parse() (astTree Expr) {
+func (p *Parser) Parse() (astTree ast.Expr) {
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			astTree = nil
@@ -32,89 +33,89 @@ func (p *Parser) Parse() (astTree Expr) {
 	return p.expression()
 }
 
-func (p *Parser) expression() Expr {
+func (p *Parser) expression() ast.Expr {
 	return p.equality()
 }
 
 // Binary expressions.
 
-func (p *Parser) equality() Expr {
+func (p *Parser) equality() ast.Expr {
 	expr := p.comparison()
 	for p.match(scanner.BANGEQUAL, scanner.EQUALEQUAL) {
 		operator := p.previous()
 		right := p.comparison()
-		expr = NewBinary(expr, operator, right)
+		expr = ast.NewBinary(expr, operator, right)
 	}
 	return expr
 }
 
-func (p *Parser) comparison() Expr {
+func (p *Parser) comparison() ast.Expr {
 	expr := p.term()
 	for p.match(scanner.GREATER, scanner.GREATEREQUAL, scanner.LESS, scanner.LESSEQUAL) {
 		operator := p.previous()
 		right := p.term()
-		expr = NewBinary(expr, operator, right)
+		expr = ast.NewBinary(expr, operator, right)
 	}
 	return expr
 }
 
-func (p *Parser) term() Expr {
+func (p *Parser) term() ast.Expr {
 	expr := p.factor()
 	for p.match(scanner.MINUS, scanner.PLUS) {
 		operator := p.previous()
 		right := p.factor()
-		expr = NewBinary(expr, operator, right)
+		expr = ast.NewBinary(expr, operator, right)
 	}
 	return expr
 }
 
-func (p *Parser) factor() Expr {
+func (p *Parser) factor() ast.Expr {
 	expr := p.unary()
 	for p.match(scanner.SLASH, scanner.STAR) {
 		operator := p.previous()
 		right := p.unary()
-		expr = NewBinary(expr, operator, right)
+		expr = ast.NewBinary(expr, operator, right)
 	}
 	return expr
 }
 
 // Unary expression.
 
-func (p *Parser) unary() Expr {
+func (p *Parser) unary() ast.Expr {
 	if p.match(scanner.BANG, scanner.MINUS) {
 		operator := p.previous()
 		right := p.unary()
-		return NewUnary(operator, right)
+		return ast.NewUnary(operator, right)
 	}
 	return p.primary()
 }
 
 // Primary expression.
 
-func (p *Parser) primary() Expr {
+func (p *Parser) primary() ast.Expr {
 	if p.match(scanner.FALSE) {
-		return NewLiteral(false)
+		return ast.NewLiteral(false)
 	}
 	if p.match(scanner.TRUE) {
-		return NewLiteral(true)
+		return ast.NewLiteral(true)
 	}
 	if p.match(scanner.NIL) {
-		return NewLiteral(nil)
+		return ast.NewLiteral(nil)
 	}
 	if p.match(scanner.NUMBER, scanner.STRING) {
-		return NewLiteral(p.previous().Literal())
+		return ast.NewLiteral(p.previous().Literal())
 	}
 	if p.match(scanner.LEFTPAREN) {
 		expr := p.expression()
 		p.consume(scanner.RIGHTPAREN, "Expect ')' after expression.")
-		return NewGrouping(expr)
+		return ast.NewGrouping(expr)
 	}
 	panic(p.erro(p.peek(), "Expect expression."))
 }
 
 // helpers.
 
-func (p *Parser) match(types ...TokenType) bool {
+func (p *Parser) match(types ...scanner.TokenType) bool {
 	for _, kind := range types {
 		if p.check(kind) {
 			p.advance()
@@ -124,21 +125,21 @@ func (p *Parser) match(types ...TokenType) bool {
 	return false
 }
 
-func (p *Parser) consume(kind TokenType, errMsg string) Token {
+func (p *Parser) consume(kind scanner.TokenType, errMsg string) scanner.Token {
 	if p.check(kind) {
 		return p.advance()
 	}
 	panic(p.erro(p.peek(), errMsg))
 }
 
-func (p *Parser) check(kind TokenType) bool {
+func (p *Parser) check(kind scanner.TokenType) bool {
 	if p.isAtEnd() {
 		return false
 	}
 	return p.peek().Kind() == kind
 }
 
-func (p *Parser) advance() Token {
+func (p *Parser) advance() scanner.Token {
 	if !p.isAtEnd() {
 		p.current++
 	}
@@ -149,15 +150,15 @@ func (p *Parser) isAtEnd() bool {
 	return p.peek().Kind() == scanner.EOF
 }
 
-func (p *Parser) peek() Token {
+func (p *Parser) peek() scanner.Token {
 	return p.tokens[p.current]
 }
 
-func (p *Parser) previous() Token {
+func (p *Parser) previous() scanner.Token {
 	return p.tokens[p.current-1]
 }
 
-func (p *Parser) erro(token Token, message string) error {
+func (p *Parser) erro(token scanner.Token, message string) error {
 	if token.Kind() == scanner.EOF {
 		p.errReporter(token.Line(), " at end. Message: "+message)
 	} else {

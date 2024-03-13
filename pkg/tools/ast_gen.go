@@ -14,7 +14,7 @@ func DefineAst(outputDir string, baseName string, types []string) {
 	}
 
 	strBuilder := strings.Builder{}
-	_, err = strBuilder.WriteString(`package parser
+	_, err = strBuilder.WriteString(`package ast
 
 import (
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/scanner"

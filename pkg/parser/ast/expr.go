@@ -1,4 +1,4 @@
-package parser
+package ast
 
 import (
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/scanner"
