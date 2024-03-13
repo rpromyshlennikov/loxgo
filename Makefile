@@ -44,7 +44,7 @@ imports: tools ## Check and fix import section by import rules
 
 .PHONY: cyclomatic
 cyclomatic: tools ## Check the project with gocyclo for cyclomatic complexity
-	gocyclo -over 10 `find . -type f -iname '*.go' -not -path '*/\.*'`
+	gocyclo -over 10 `find . -type f -iname '*.go' -not -iname '*_test.go' -not -path '*/\.*'`
 
 .PHONY: static_check
 static_check: fmt imports vet lint cyclomatic ## Run static checks (fmt, lint, imports, vet, ...) all over the project

@@ -99,6 +99,8 @@ func TestScanner_ScanTokens(t *testing.T) {
 		if got := s.ScanTokens(); !reflect.DeepEqual(got, want.tokens) {
 			t.Errorf("ScanTokens() = %v, want %v", got, want.tokens)
 		}
+
+		// TODO: add case 5 / 3. Not covered as division operator.
 	})
 
 	t.Run("test string literals", func(t *testing.T) {

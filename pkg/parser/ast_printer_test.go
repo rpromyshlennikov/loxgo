@@ -22,4 +22,20 @@ func TestAstPrinter_Sprint(t *testing.T) {
 			t.Errorf("Sprint() = %v, want %v", got, want)
 		}
 	})
+
+	t.Run("Check -123 * (45.67)) as source pretty printing", func(t *testing.T) {
+		expr := NewParser(
+			scanner.NewScanner(
+				"-123 * (45.67)",
+				nil,
+			).ScanTokens(),
+			nil,
+		).Parse()
+
+		p := AstPrinter{}
+		want := "(* (- 123) (group 45.67))"
+		if got := p.Sprint(expr); got != want {
+			t.Errorf("Sprint() = %v, want %v", got, want)
+		}
+	})
 }

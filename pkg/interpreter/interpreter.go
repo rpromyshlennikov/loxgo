@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/parser"
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/scanner"
 )
 
@@ -57,10 +58,12 @@ func (lox *LoxGo) Run(sources string) {
 	scannr := scanner.NewScanner(sources, errRepCallback)
 	tokens := scannr.ScanTokens()
 
-	// For now, just print the tokens.
-	for _, token := range tokens {
-		fmt.Println(token)
-	}
+	parsr := parser.NewParser(tokens, errRepCallback)
+	astTree := parsr.Parse()
+
+	// For now, just print the AST.
+	//fmt.Println((&parser.AstPrinter{}).Sprint(astTree))
+	fmt.Println(parser.AstPrinter{}.Sprint(astTree))
 }
 
 func (lox *LoxGo) erro(line int, message string) {

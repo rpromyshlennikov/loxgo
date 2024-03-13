@@ -235,7 +235,6 @@ func (s *Scanner) addNoLiteralToken(kind TokenType) {
 func (s *Scanner) addToken(kind TokenType, literal any) {
 	runes := s.sources[s.start:s.current]
 	token := NewToken(kind, string(runes), literal, s.line)
-	fmt.Println(s.start, s.current, runes, token)
 	s.tokens = append(s.tokens, token)
 }
 
