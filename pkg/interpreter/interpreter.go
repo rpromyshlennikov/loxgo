@@ -14,7 +14,7 @@ type RuntimeError struct {
 }
 
 func (re *RuntimeError) Error() string {
-	return fmt.Sprintf("Runtime error: %s at token: %v,", re.message, re.token)
+	return fmt.Sprintf(`Runtime error: "%s" at token: %v`, re.message, re.token)
 }
 
 func NewRuntimeError(token scanner.Token, message string) *RuntimeError {
@@ -139,9 +139,8 @@ func (i Interpreter) isTruthy(value any) bool {
 	if value == nil {
 		return false
 	}
-	switch value.(type) {
-	case bool:
-		return value.(bool)
+	if value, ok := value.(bool); ok {
+		return value
 	}
 	return true
 }
@@ -159,7 +158,7 @@ func (i Interpreter) checkNumberOperands(operator scanner.Token, operands ...any
 		err := NewRuntimeError(
 			operator,
 			fmt.Sprintf(
-				"invalid type for operator: %s given, must be number.",
+				"invalid type for operator %s given, must be number.",
 				operator.Kind(),
 			),
 		)
