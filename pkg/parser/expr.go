@@ -8,81 +8,81 @@ type Token = scanner.Token
 type TokenType = scanner.TokenType
 
 type Expr interface {
-	accept(visitor Visitor) any
+	Accept(visitor Visitor) any
 }
 
 type Visitor interface {
-	visitBinary(*Binary) any
-	visitGrouping(*Grouping) any
-	visitLiteral(*Literal) any
-	visitUnary(*Unary) any
+	VisitBinary(*Binary) any
+	VisitGrouping(*Grouping) any
+	VisitLiteral(*Literal) any
+	VisitUnary(*Unary) any
 }
 
 type Binary struct {
-	// left field.
-	left Expr
-	// operator field.
-	operator Token
-	// right field.
-	right Expr
+	// Left field.
+	Left Expr
+	// Operator field.
+	Operator Token
+	// Right field.
+	Right Expr
 }
 
 func NewBinary(left Expr, operator Token, right Expr) *Binary {
 	this := Binary{}
-	this.left = left
-	this.operator = operator
-	this.right = right
+	this.Left = left
+	this.Operator = operator
+	this.Right = right
 	return &this
 }
 
-func (b *Binary) accept(visitor Visitor) any {
-	return visitor.visitBinary(b)
+func (b *Binary) Accept(visitor Visitor) any {
+	return visitor.VisitBinary(b)
 }
 
 type Grouping struct {
-	// expression field.
-	expression Expr
+	// Expression field.
+	Expression Expr
 }
 
 func NewGrouping(expression Expr) *Grouping {
 	this := Grouping{}
-	this.expression = expression
+	this.Expression = expression
 	return &this
 }
 
-func (g *Grouping) accept(visitor Visitor) any {
-	return visitor.visitGrouping(g)
+func (g *Grouping) Accept(visitor Visitor) any {
+	return visitor.VisitGrouping(g)
 }
 
 type Literal struct {
-	// value field.
-	value any
+	// Value field.
+	Value any
 }
 
 func NewLiteral(value any) *Literal {
 	this := Literal{}
-	this.value = value
+	this.Value = value
 	return &this
 }
 
-func (l *Literal) accept(visitor Visitor) any {
-	return visitor.visitLiteral(l)
+func (l *Literal) Accept(visitor Visitor) any {
+	return visitor.VisitLiteral(l)
 }
 
 type Unary struct {
-	// operator field.
-	operator Token
-	// right field.
-	right Expr
+	// Operator field.
+	Operator Token
+	// Right field.
+	Right Expr
 }
 
 func NewUnary(operator Token, right Expr) *Unary {
 	this := Unary{}
-	this.operator = operator
-	this.right = right
+	this.Operator = operator
+	this.Right = right
 	return &this
 }
 
-func (u *Unary) accept(visitor Visitor) any {
-	return visitor.visitUnary(u)
+func (u *Unary) Accept(visitor Visitor) any {
+	return visitor.VisitUnary(u)
 }
