@@ -1,8 +1,9 @@
-package parser
+package plugins
 
 import (
 	"testing"
 
+	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/parser"
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/parser/ast"
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/scanner"
 )
@@ -25,7 +26,7 @@ func TestAstPrinter_Sprint(t *testing.T) {
 	})
 
 	t.Run("Check -123 * (45.67)) as source pretty printing", func(t *testing.T) {
-		expr := NewParser(
+		expr := parser.NewParser(
 			scanner.NewScanner(
 				"-123 * (45.67)",
 				nil,
