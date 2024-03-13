@@ -167,19 +167,3 @@ func (p *Parser) erro(token scanner.Token, message string) error {
 
 	return fmt.Errorf("parse error")
 }
-
-func (p *Parser) synchronize() {
-	p.advance()
-
-	for !p.isAtEnd() {
-		if p.previous().Kind() == scanner.SEMICOLON {
-			return
-		}
-
-		switch p.peek().Kind() {
-		case scanner.CLASS, scanner.FUN, scanner.VAR, scanner.FOR, scanner.IF:
-			return
-		}
-		p.advance()
-	}
-}
