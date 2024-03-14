@@ -59,6 +59,10 @@ func (i Interpreter) VisitUnary(unary *ast.Unary) any {
 	return nil
 }
 
+// TODO: gocyclo considers this function too difficult,
+// refactor to several private operator methods after book will be completed.
+//
+//gocyclo:ignore
 func (i Interpreter) VisitBinary(binary *ast.Binary) any {
 	left := i.evaluate(binary.Left)
 	right := i.evaluate(binary.Right)

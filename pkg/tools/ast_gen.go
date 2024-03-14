@@ -70,6 +70,10 @@ func defineVisitor(builder *strings.Builder, types []string) {
 	}
 }
 
+// gocyclo considers this function too difficult, but it's just tool.
+// TODO: refactor to several private methods or use templates after book will be completed.
+//
+//gocyclo:ignore
 func defineType(builder *strings.Builder, kind string) {
 	className, fieldsList := classProps(kind)
 	fields := strings.Split(fieldsList, ", ")
