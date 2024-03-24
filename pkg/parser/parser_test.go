@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/parser/ast"
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/plugins"
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/scanner"
 )
@@ -15,7 +16,8 @@ func TestParser_Parse(t *testing.T) {
 		scannr := scanner.NewScanner("3 / 2 + 2 * 4 - 1 > 5 == true != 4 <= 5 + (1 - 2)", nil)
 		p := NewParser(scannr.ScanTokens(), nil)
 		want := "(!= (== (> (- (+ (/ 3 2) (* 2 4)) 1) 5) true) (<= 4 (+ 5 (group (- 1 2)))))"
-		if got := pprinter.Sprint(p.Parse()); !reflect.DeepEqual(got, want) {
+		expr := p.Parse()[0].(ast.Expression)
+		if got := pprinter.Sprint(&()); !reflect.DeepEqual(got, want) {
 			t.Errorf("Parse() = %v, want %v", got, want)
 		}
 	})
