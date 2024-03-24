@@ -18,9 +18,9 @@ func TestAstPrinter_Sprint(t *testing.T) {
 			ast.NewGrouping(
 				ast.NewLiteral(45.67)))
 
-		p := AstPrinter{}
-		want := "(* (- 123) (group 45.67))"
-		if got := p.Sprint(expr); got != want {
+		p := NewAstPrinter()
+		want := "(* (- 123) (group 45.67));"
+		if got := p.Sprint([]ast.Stmt{ast.NewExpression(expr)}); got != want {
 			t.Errorf("Sprint() = %v, want %v", got, want)
 		}
 	})
@@ -28,14 +28,14 @@ func TestAstPrinter_Sprint(t *testing.T) {
 	t.Run("Check -123 * (45.67)) as source pretty printing", func(t *testing.T) {
 		expr := parser.NewParser(
 			scanner.NewScanner(
-				"-123 * (45.67)",
+				"-123 * (45.67);",
 				nil,
 			).ScanTokens(),
 			nil,
 		).Parse()
 
-		p := AstPrinter{}
-		want := "(* (- 123) (group 45.67))"
+		p := NewAstPrinter()
+		want := "(* (- 123) (group 45.67));"
 		if got := p.Sprint(expr); got != want {
 			t.Errorf("Sprint() = %v, want %v", got, want)
 		}

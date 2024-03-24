@@ -30,4 +30,13 @@ func generateAst(outputDir string) {
 			"Unary    : Operator scanner.Token, Right Expr",
 		},
 	)
+
+	tools.DefineAst(
+		outputDir,
+		"Stmt",
+		[]string{
+			"Expression : Expression Expr",
+			"Print      : Expression Expr",
+		},
+	)
 }

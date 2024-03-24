@@ -24,9 +24,17 @@ func NewRuntimeError(token scanner.Token, message string) *RuntimeError {
 	}
 }
 
-type Interpreter struct{}
+type Interpreter struct {
+	lastPrintedValue *string
+}
 
-func (i Interpreter) Interpret(expr ast.Expr) (result string, err error) {
+func NewInterpreter() Interpreter {
+	return Interpreter{
+		lastPrintedValue: new(string),
+	}
+}
+
+func (i Interpreter) Interpret(statements []ast.Stmt) (err error) {
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			rErr, ok := recovered.(*RuntimeError)
@@ -36,14 +44,16 @@ func (i Interpreter) Interpret(expr ast.Expr) (result string, err error) {
 			err = rErr
 		}
 	}()
-	if expr == nil {
-		return "", NewRuntimeError(
+	if len(statements) == 0 {
+		return NewRuntimeError(
 			scanner.NewToken(scanner.EOF, "", nil, 0),
-			"no expression given",
+			"no statements given",
 		)
 	}
-	value := i.evaluate(expr)
-	return i.stringify(value), nil
+	for _, statement := range statements {
+		i.execute(statement)
+	}
+	return nil
 }
 
 func (i Interpreter) VisitUnary(unary *ast.Unary) any {
@@ -137,6 +147,21 @@ func (i Interpreter) VisitGrouping(grouping *ast.Grouping) any {
 
 func (i Interpreter) evaluate(expr ast.Expr) any {
 	return expr.Accept(i)
+}
+
+func (i Interpreter) execute(stmt ast.Stmt) {
+	stmt.Accept(i)
+}
+
+func (i Interpreter) VisitExpression(stmt *ast.Expression) {
+	i.evaluate(stmt.Expression)
+}
+
+func (i Interpreter) VisitPrint(stmt *ast.Print) {
+	value := i.evaluate(stmt.Expression)
+	strValue := i.stringify(value)
+	fmt.Println(strValue)
+	*i.lastPrintedValue = strValue
 }
 
 func (i Interpreter) isTruthy(value any) bool {
