@@ -24,7 +24,15 @@ func NewRuntimeError(token scanner.Token, message string) *RuntimeError {
 	}
 }
 
-type Interpreter struct{}
+type Interpreter struct {
+	lastPrintedValue *string
+}
+
+func NewInterpreter() Interpreter {
+	return Interpreter{
+		lastPrintedValue: new(string),
+	}
+}
 
 func (i Interpreter) Interpret(statements []ast.Stmt) (err error) {
 	defer func() {
@@ -151,7 +159,9 @@ func (i Interpreter) VisitExpression(stmt *ast.Expression) {
 
 func (i Interpreter) VisitPrint(stmt *ast.Print) {
 	value := i.evaluate(stmt.Expression)
-	fmt.Println(i.stringify(value))
+	strValue := i.stringify(value)
+	fmt.Println(strValue)
+	*i.lastPrintedValue = strValue
 }
 
 func (i Interpreter) isTruthy(value any) bool {
