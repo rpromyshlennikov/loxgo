@@ -24,17 +24,40 @@ func NewParser(tokens []scanner.Token, errReporter errors.Reporter) *Parser {
 	}
 }
 
-func (p *Parser) Parse() (astTree ast.Expr) {
+func (p *Parser) Parse() (astTree []ast.Stmt) {
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			astTree = nil
 		}
 	}()
-	return p.expression()
+	var statements []ast.Stmt
+	for !p.isAtEnd() {
+		statements = append(statements, p.statement())
+	}
+	return statements
 }
 
 func (p *Parser) expression() ast.Expr {
 	return p.equality()
+}
+
+func (p *Parser) statement() ast.Stmt {
+	if p.match(scanner.PRINT) {
+		return p.printStatement()
+	}
+	return p.expressionStatement()
+}
+
+func (p *Parser) printStatement() ast.Stmt {
+	value := p.expression()
+	p.consume(scanner.SEMICOLON, "Expect ';' after value.")
+	return ast.NewPrint(value)
+}
+
+func (p *Parser) expressionStatement() ast.Stmt {
+	expr := p.expression()
+	p.consume(scanner.SEMICOLON, "Expect ';' after expression.")
+	return ast.NewExpression(expr)
 }
 
 // Binary expressions.
