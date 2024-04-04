@@ -31,6 +31,13 @@ func (p AstPrinter) VisitUnary(unary *ast.Unary) any {
 	return p.parenthesize(unary.Operator.Lexeme(), unary.Right)
 }
 
+func (p AstPrinter) VisitVariable(variable *ast.Variable) any {
+	if variable == nil {
+		return "nil"
+	}
+	return fmt.Sprint(variable.Name.Lexeme())
+}
+
 func (p AstPrinter) VisitBinary(binary *ast.Binary) any {
 	return p.parenthesize(binary.Operator.Lexeme(), binary.Left, binary.Right)
 }
@@ -55,6 +62,19 @@ func (p AstPrinter) VisitPrint(stmt *ast.Print) {
 	value := stmt.Expression.Accept(p)
 	result := "print " + value.(string) + ";"
 	p.addResult(result)
+}
+
+func (p AstPrinter) VisitVar(stmt *ast.Var) {
+	value := stmt.Initializer.Accept(p)
+	result := "var " + stmt.Name.Lexeme() + " = " + value.(string) + ";"
+	p.addResult(result)
+}
+
+func (p AstPrinter) VisitAssign(expr *ast.Assign) any {
+	value := expr.Value.Accept(p)
+	result := expr.Name.Lexeme() + " = " + value.(string) + ";"
+
+	return result
 }
 
 func (p AstPrinter) parenthesize(name string, exprs ...ast.Expr) any {

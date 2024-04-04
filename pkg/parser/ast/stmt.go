@@ -1,5 +1,9 @@
 package ast
 
+import (
+	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/scanner"
+)
+
 type Stmt interface {
 	Accept(visitor VisitorStmt)
 }
@@ -7,6 +11,7 @@ type Stmt interface {
 type VisitorStmt interface {
 	VisitExpression(*Expression)
 	VisitPrint(*Print)
+	VisitVar(*Var)
 }
 
 type Expression struct {
@@ -37,4 +42,22 @@ func NewPrint(expression Expr) *Print {
 
 func (p *Print) Accept(visitor VisitorStmt) {
 	visitor.VisitPrint(p)
+}
+
+type Var struct {
+	// Name field.
+	Name scanner.Token
+	// Initializer field.
+	Initializer Expr
+}
+
+func NewVar(name scanner.Token, initializer Expr) *Var {
+	this := Var{}
+	this.Name = name
+	this.Initializer = initializer
+	return &this
+}
+
+func (v *Var) Accept(visitor VisitorStmt) {
+	visitor.VisitVar(v)
 }

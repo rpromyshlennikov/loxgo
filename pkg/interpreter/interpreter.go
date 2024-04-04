@@ -1,7 +1,6 @@
 package interpreter
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/parser/ast"
@@ -26,11 +25,13 @@ func NewRuntimeError(token scanner.Token, message string) *RuntimeError {
 
 type Interpreter struct {
 	lastPrintedValue *string
+	environment      Environment
 }
 
 func NewInterpreter() Interpreter {
 	return Interpreter{
 		lastPrintedValue: new(string),
+		environment:      NewEnvironment(),
 	}
 }
 
@@ -39,9 +40,10 @@ func (i Interpreter) Interpret(statements []ast.Stmt) (err error) {
 		if recovered := recover(); recovered != nil {
 			rErr, ok := recovered.(*RuntimeError)
 			if !ok {
-				err = errors.New("unknown error in runtime during interpret")
+				err = recovered.(error)
+			} else {
+				err = rErr
 			}
-			err = rErr
 		}
 	}()
 	if len(statements) == 0 {
@@ -67,6 +69,14 @@ func (i Interpreter) VisitUnary(unary *ast.Unary) any {
 	}
 	// Unreachable.
 	return nil
+}
+
+func (i Interpreter) VisitVariable(variable *ast.Variable) any {
+	value, err := i.environment.get(variable.Name)
+	if err != nil {
+		panic(err)
+	}
+	return value
 }
 
 // TODO: gocyclo considers this function too difficult,
@@ -162,6 +172,24 @@ func (i Interpreter) VisitPrint(stmt *ast.Print) {
 	strValue := i.stringify(value)
 	fmt.Println(strValue)
 	*i.lastPrintedValue = strValue
+}
+
+func (i Interpreter) VisitVar(stmt *ast.Var) {
+	var value any
+	if stmt.Initializer != nil {
+		value = i.evaluate(stmt.Initializer)
+	}
+	i.environment.define(stmt.Name.Lexeme(), value)
+}
+
+func (i Interpreter) VisitAssign(expr *ast.Assign) any {
+	value := i.evaluate(expr.Value)
+	err := i.environment.assign(expr.Name, value)
+	if err != nil {
+		panic(err)
+	}
+
+	return value
 }
 
 func (i Interpreter) isTruthy(value any) bool {

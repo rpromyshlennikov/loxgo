@@ -9,10 +9,30 @@ type Expr interface {
 }
 
 type VisitorExpr interface {
+	VisitAssign(*Assign) any
 	VisitBinary(*Binary) any
 	VisitGrouping(*Grouping) any
 	VisitLiteral(*Literal) any
 	VisitUnary(*Unary) any
+	VisitVariable(*Variable) any
+}
+
+type Assign struct {
+	// Name field.
+	Name scanner.Token
+	// Value field.
+	Value Expr
+}
+
+func NewAssign(name scanner.Token, value Expr) *Assign {
+	this := Assign{}
+	this.Name = name
+	this.Value = value
+	return &this
+}
+
+func (a *Assign) Accept(visitor VisitorExpr) any {
+	return visitor.VisitAssign(a)
 }
 
 type Binary struct {
@@ -82,4 +102,19 @@ func NewUnary(operator scanner.Token, right Expr) *Unary {
 
 func (u *Unary) Accept(visitor VisitorExpr) any {
 	return visitor.VisitUnary(u)
+}
+
+type Variable struct {
+	// Name field.
+	Name scanner.Token
+}
+
+func NewVariable(name scanner.Token) *Variable {
+	this := Variable{}
+	this.Name = name
+	return &this
+}
+
+func (v *Variable) Accept(visitor VisitorExpr) any {
+	return visitor.VisitVariable(v)
 }

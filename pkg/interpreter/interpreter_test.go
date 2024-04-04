@@ -142,6 +142,28 @@ func TestInterpreter_Interpret(t *testing.T) {
 		}
 	})
 
+	t.Run("Var declaration with initialization and access to it works fine", func(t *testing.T) {
+		// arrange
+		pprinter := plugins.NewAstPrinter()
+		scnr := scanner.NewScanner("var x = 1+2; print x; x = x+5; print x;", nil)
+		prsr := parser.NewParser(scnr.ScanTokens(), nil)
+		parsed := prsr.Parse()
+		interp := NewInterpreter()
+
+		// act
+		err := interp.Interpret(parsed)
+
+		// assert
+		if err != nil {
+			t.Errorf("Interpret() return error: %s, but shouldn't", err)
+		}
+		want := "8"
+		got := *interp.lastPrintedValue
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("Interpret() = %v, want %v, ast %s", got, want, pprinter.Sprint(parsed))
+		}
+	})
+
 	t.Run("Cannot interpret plus operator between string and number", func(t *testing.T) {
 		// arrange
 		pprinter := plugins.NewAstPrinter()
@@ -204,4 +226,5 @@ func TestInterpreter_Interpret(t *testing.T) {
 			t.Errorf("Interpret() error = %s, want error %s, ast %s", err.Error(), wantErr, pprinter.Sprint(parsed))
 		}
 	})
+
 }

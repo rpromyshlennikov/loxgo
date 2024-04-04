@@ -24,10 +24,12 @@ func generateAst(outputDir string) {
 		outputDir,
 		"Expr,any",
 		[]string{
+			"Assign   : Name scanner.Token, Value Expr",
 			"Binary   : Left Expr, Operator scanner.Token, Right Expr",
 			"Grouping : Expression Expr",
 			"Literal  : Value any",
 			"Unary    : Operator scanner.Token, Right Expr",
+			"Variable : Name scanner.Token",
 		},
 	)
 
@@ -37,6 +39,7 @@ func generateAst(outputDir string) {
 		[]string{
 			"Expression : Expression Expr",
 			"Print      : Expression Expr",
+			"Var        : Name scanner.Token, Initializer Expr",
 		},
 	)
 }

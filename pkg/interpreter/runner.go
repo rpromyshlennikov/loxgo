@@ -21,7 +21,7 @@ func New() *LoxGo {
 	return &LoxGo{
 		hadError:        false,
 		hadRuntimeError: false,
-		interpreter:     Interpreter{},
+		interpreter:     NewInterpreter(),
 	}
 }
 
@@ -70,7 +70,6 @@ func (lox *LoxGo) Run(sources string) {
 	tokens := scannr.ScanTokens()
 
 	parsr := parser.NewParser(tokens, errRepCallback)
-	//astTree := parsr.Parse()
 	statements := parsr.Parse()
 
 	// For now, just print the AST.
@@ -85,7 +84,6 @@ func (lox *LoxGo) Run(sources string) {
 	if err != nil {
 		lox.runtimeError(err)
 	}
-	//fmt.Println(result)
 }
 
 func (lox *LoxGo) erro(line int, message string) {
