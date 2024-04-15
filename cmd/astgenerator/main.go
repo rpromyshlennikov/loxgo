@@ -37,6 +37,7 @@ func generateAst(outputDir string) {
 		outputDir,
 		"Stmt",
 		[]string{
+			"Block      : Statements []Stmt ",
 			"Expression : Expression Expr",
 			"Print      : Expression Expr",
 			"Var        : Name scanner.Token, Initializer Expr",

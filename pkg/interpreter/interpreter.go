@@ -31,7 +31,7 @@ type Interpreter struct {
 func NewInterpreter() Interpreter {
 	return Interpreter{
 		lastPrintedValue: new(string),
-		environment:      NewEnvironment(),
+		environment:      NewEnvironment(nil),
 	}
 }
 
@@ -161,6 +161,22 @@ func (i Interpreter) evaluate(expr ast.Expr) any {
 
 func (i Interpreter) execute(stmt ast.Stmt) {
 	stmt.Accept(i)
+}
+
+func (i Interpreter) executeBlock(statements []ast.Stmt, env *Environment) {
+	previous := i.environment
+	defer func() {
+		i.environment = previous
+	}()
+	i.environment = *env
+	for j := range statements {
+		i.execute(statements[j])
+	}
+}
+
+func (i Interpreter) VisitBlock(stmt *ast.Block) {
+	newEnv := NewEnvironment(&i.environment)
+	i.executeBlock(stmt.Statements, &newEnv)
 }
 
 func (i Interpreter) VisitExpression(stmt *ast.Expression) {

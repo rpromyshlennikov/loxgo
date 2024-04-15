@@ -164,6 +164,41 @@ func TestInterpreter_Interpret(t *testing.T) {
 		}
 	})
 
+	t.Run("Scoping and blocks works just fine", func(t *testing.T) {
+		// arrange
+		pprinter := plugins.NewAstPrinter()
+		scnr := scanner.NewScanner(
+			`
+			var a = "global a";
+			{
+			  var a = "outer a";
+			  {
+				var a = "inner a";
+				print a;
+			  }
+			}
+			`,
+			nil,
+		)
+		prsr := parser.NewParser(scnr.ScanTokens(), nil)
+		parsed := prsr.Parse()
+		interp := NewInterpreter()
+
+		// act
+		err := interp.Interpret(parsed)
+
+		// assert
+		if err != nil {
+			t.Errorf("Interpret() return error: %s, but shouldn't", err)
+		}
+		want := "inner a"
+
+		got := *interp.lastPrintedValue
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("Interpret() = %v, want %v, ast %s", got, want, pprinter.Sprint(parsed))
+		}
+	})
+
 	t.Run("Cannot interpret plus operator between string and number", func(t *testing.T) {
 		// arrange
 		pprinter := plugins.NewAstPrinter()

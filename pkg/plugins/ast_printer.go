@@ -8,12 +8,14 @@ import (
 )
 
 type AstPrinter struct {
-	results *[]string
+	results   *[]string
+	currLevel *uint
 }
 
 func NewAstPrinter() AstPrinter {
 	return AstPrinter{
-		results: new([]string),
+		results:   new([]string),
+		currLevel: new(uint),
 	}
 }
 
@@ -24,7 +26,7 @@ func (p AstPrinter) Sprint(stmts []ast.Stmt) string {
 	for _, stmt := range stmts {
 		stmt.Accept(p)
 	}
-	return strings.Join(*p.results, ";\n")
+	return strings.Join(*p.results, "\n")
 }
 
 func (p AstPrinter) VisitUnary(unary *ast.Unary) any {
@@ -51,6 +53,16 @@ func (p AstPrinter) VisitLiteral(literal *ast.Literal) any {
 
 func (p AstPrinter) VisitGrouping(grouping *ast.Grouping) any {
 	return p.parenthesize("group", grouping.Expression)
+}
+
+func (p AstPrinter) VisitBlock(stmt *ast.Block) {
+	p.addResult("{")
+	*p.currLevel += 1
+	for i := range stmt.Statements {
+		stmt.Statements[i].Accept(p)
+	}
+	*p.currLevel -= 1
+	p.addResult("}")
 }
 
 func (p AstPrinter) VisitExpression(stmt *ast.Expression) {
@@ -87,5 +99,6 @@ func (p AstPrinter) parenthesize(name string, exprs ...ast.Expr) any {
 }
 
 func (p AstPrinter) addResult(result string) {
-	*p.results = append(*p.results, result)
+	tabs := strings.Repeat("\t", int(*p.currLevel))
+	*p.results = append(*p.results, tabs+result)
 }
