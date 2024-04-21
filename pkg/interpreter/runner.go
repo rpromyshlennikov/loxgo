@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/parser"
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/scanner"
@@ -52,6 +53,10 @@ func (lox *LoxGo) RunPrompt() {
 		input := scannr.Text()
 		if input == "" {
 			continue
+		}
+		if !strings.HasSuffix(input, ";") {
+			// direct expression support hack.
+			input = "print " + input + ";"
 		}
 		lox.Run(input)
 		lox.hadError = false
