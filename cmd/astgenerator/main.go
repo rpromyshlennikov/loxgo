@@ -22,12 +22,25 @@ func generateAst(outputDir string) {
 
 	tools.DefineAst(
 		outputDir,
-		"Expr",
+		"Expr,any",
 		[]string{
-			"Binary   : Left Expr, Operator Token, Right Expr",
+			"Assign   : Name scanner.Token, Value Expr",
+			"Binary   : Left Expr, Operator scanner.Token, Right Expr",
 			"Grouping : Expression Expr",
 			"Literal  : Value any",
-			"Unary    : Operator Token, Right Expr",
+			"Unary    : Operator scanner.Token, Right Expr",
+			"Variable : Name scanner.Token",
+		},
+	)
+
+	tools.DefineAst(
+		outputDir,
+		"Stmt",
+		[]string{
+			"Block      : Statements []Stmt ",
+			"Expression : Expression Expr",
+			"Print      : Expression Expr",
+			"Var        : Name scanner.Token, Initializer Expr",
 		},
 	)
 }

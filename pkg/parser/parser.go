@@ -24,17 +24,91 @@ func NewParser(tokens []scanner.Token, errReporter errors.Reporter) *Parser {
 	}
 }
 
-func (p *Parser) Parse() (astTree ast.Expr) {
+func (p *Parser) Parse() (astTree []ast.Stmt) {
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			astTree = nil
 		}
 	}()
-	return p.expression()
+	var statements []ast.Stmt
+	for !p.isAtEnd() {
+		statements = append(statements, p.declaration())
+	}
+	return statements
 }
 
 func (p *Parser) expression() ast.Expr {
-	return p.equality()
+	return p.assignment()
+}
+
+func (p *Parser) declaration() (astTree ast.Stmt) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			astTree = nil
+			p.synchronize()
+		}
+	}()
+	if p.match(scanner.VAR) {
+		return p.varDeclaration()
+	}
+	return p.statement()
+}
+
+func (p *Parser) statement() ast.Stmt {
+	if p.match(scanner.PRINT) {
+		return p.printStatement()
+	}
+	if p.match(scanner.LEFTBRACE) {
+		return ast.NewBlock(p.block())
+	}
+	return p.expressionStatement()
+}
+
+func (p *Parser) printStatement() ast.Stmt {
+	value := p.expression()
+	p.consume(scanner.SEMICOLON, "Expect ';' after value.")
+	return ast.NewPrint(value)
+}
+
+func (p *Parser) varDeclaration() ast.Stmt {
+	name := p.consume(scanner.IDENTIFIER, "Expect variable name.")
+	var initializer ast.Expr
+	if p.match(scanner.EQUAL) {
+		initializer = p.expression()
+	}
+	p.consume(scanner.SEMICOLON, "Expect ';' after variable declaration.")
+	return ast.NewVar(name, initializer)
+}
+
+func (p *Parser) expressionStatement() ast.Stmt {
+	expr := p.expression()
+	p.consume(scanner.SEMICOLON, "Expect ';' after expression.")
+	return ast.NewExpression(expr)
+}
+
+func (p *Parser) block() []ast.Stmt {
+	var statements []ast.Stmt
+	for !p.check(scanner.RIGHTBRACE) && !p.isAtEnd() {
+		statements = append(statements, p.declaration())
+	}
+	p.consume(scanner.RIGHTBRACE, "Expect '}' after block.")
+	return statements
+}
+
+func (p *Parser) assignment() ast.Expr {
+	expr := p.equality()
+	if p.match(scanner.EQUAL) {
+		equals := p.previous()
+		value := p.assignment()
+
+		variable, ok := expr.(*ast.Variable)
+		if !ok {
+			panic(p.erro(equals, "Invalid assignment target."))
+		}
+		name := variable.Name
+		return ast.NewAssign(name, value)
+	}
+	return expr
 }
 
 // Binary expressions.
@@ -105,6 +179,9 @@ func (p *Parser) primary() ast.Expr {
 	if p.match(scanner.NUMBER, scanner.STRING) {
 		return ast.NewLiteral(p.previous().Literal())
 	}
+	if p.match(scanner.IDENTIFIER) {
+		return ast.NewVariable(p.previous())
+	}
 	if p.match(scanner.LEFTPAREN) {
 		expr := p.expression()
 		p.consume(scanner.RIGHTPAREN, "Expect ')' after expression.")
@@ -166,4 +243,20 @@ func (p *Parser) erro(token scanner.Token, message string) error {
 	}
 
 	return fmt.Errorf("parse error")
+}
+
+func (p *Parser) synchronize() {
+	p.advance()
+
+	for !p.isAtEnd() {
+		if p.previous().Kind() == scanner.SEMICOLON {
+			return
+		}
+
+		switch p.peek().Kind() {
+		case scanner.CLASS, scanner.FUN, scanner.VAR, scanner.FOR, scanner.IF:
+			return
+		}
+		p.advance()
+	}
 }

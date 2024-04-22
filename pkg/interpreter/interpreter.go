@@ -1,7 +1,6 @@
 package interpreter
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/parser/ast"
@@ -24,26 +23,39 @@ func NewRuntimeError(token scanner.Token, message string) *RuntimeError {
 	}
 }
 
-type Interpreter struct{}
+type Interpreter struct {
+	lastPrintedValue *string
+	environment      Environment
+}
 
-func (i Interpreter) Interpret(expr ast.Expr) (result string, err error) {
+func NewInterpreter() Interpreter {
+	return Interpreter{
+		lastPrintedValue: new(string),
+		environment:      NewEnvironment(nil),
+	}
+}
+
+func (i Interpreter) Interpret(statements []ast.Stmt) (err error) {
 	defer func() {
 		if recovered := recover(); recovered != nil {
 			rErr, ok := recovered.(*RuntimeError)
 			if !ok {
-				err = errors.New("unknown error in runtime during interpret")
+				err = recovered.(error)
+			} else {
+				err = rErr
 			}
-			err = rErr
 		}
 	}()
-	if expr == nil {
-		return "", NewRuntimeError(
+	if len(statements) == 0 {
+		return NewRuntimeError(
 			scanner.NewToken(scanner.EOF, "", nil, 0),
-			"no expression given",
+			"no statements given",
 		)
 	}
-	value := i.evaluate(expr)
-	return i.stringify(value), nil
+	for _, statement := range statements {
+		i.execute(statement)
+	}
+	return nil
 }
 
 func (i Interpreter) VisitUnary(unary *ast.Unary) any {
@@ -57,6 +69,14 @@ func (i Interpreter) VisitUnary(unary *ast.Unary) any {
 	}
 	// Unreachable.
 	return nil
+}
+
+func (i Interpreter) VisitVariable(variable *ast.Variable) any {
+	value, err := i.environment.get(variable.Name)
+	if err != nil {
+		panic(err)
+	}
+	return value
 }
 
 // TODO: gocyclo considers this function too difficult,
@@ -137,6 +157,55 @@ func (i Interpreter) VisitGrouping(grouping *ast.Grouping) any {
 
 func (i Interpreter) evaluate(expr ast.Expr) any {
 	return expr.Accept(i)
+}
+
+func (i Interpreter) execute(stmt ast.Stmt) {
+	stmt.Accept(i)
+}
+
+func (i Interpreter) executeBlock(statements []ast.Stmt, env *Environment) {
+	previous := i.environment
+	defer func() {
+		i.environment = previous
+	}()
+	i.environment = *env
+	for j := range statements {
+		i.execute(statements[j])
+	}
+}
+
+func (i Interpreter) VisitBlock(stmt *ast.Block) {
+	newEnv := NewEnvironment(&i.environment)
+	i.executeBlock(stmt.Statements, &newEnv)
+}
+
+func (i Interpreter) VisitExpression(stmt *ast.Expression) {
+	i.evaluate(stmt.Expression)
+}
+
+func (i Interpreter) VisitPrint(stmt *ast.Print) {
+	value := i.evaluate(stmt.Expression)
+	strValue := i.stringify(value)
+	fmt.Println(strValue)
+	*i.lastPrintedValue = strValue
+}
+
+func (i Interpreter) VisitVar(stmt *ast.Var) {
+	var value any
+	if stmt.Initializer != nil {
+		value = i.evaluate(stmt.Initializer)
+	}
+	i.environment.define(stmt.Name.Lexeme(), value)
+}
+
+func (i Interpreter) VisitAssign(expr *ast.Assign) any {
+	value := i.evaluate(expr.Value)
+	err := i.environment.assign(expr.Name, value)
+	if err != nil {
+		panic(err)
+	}
+
+	return value
 }
 
 func (i Interpreter) isTruthy(value any) bool {

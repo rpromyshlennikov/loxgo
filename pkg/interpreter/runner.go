@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/parser"
-	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/plugins"
 	"github.com/rpromyshlennikov/lox_tree_walk_interpretator/pkg/scanner"
 )
 
@@ -22,7 +22,7 @@ func New() *LoxGo {
 	return &LoxGo{
 		hadError:        false,
 		hadRuntimeError: false,
-		interpreter:     Interpreter{},
+		interpreter:     NewInterpreter(),
 	}
 }
 
@@ -54,6 +54,10 @@ func (lox *LoxGo) RunPrompt() {
 		if input == "" {
 			continue
 		}
+		if !strings.HasSuffix(input, ";") {
+			// direct expression support hack.
+			input = "print " + input + ";"
+		}
 		lox.Run(input)
 		lox.hadError = false
 		lox.hadRuntimeError = false
@@ -71,21 +75,20 @@ func (lox *LoxGo) Run(sources string) {
 	tokens := scannr.ScanTokens()
 
 	parsr := parser.NewParser(tokens, errRepCallback)
-	astTree := parsr.Parse()
+	statements := parsr.Parse()
 
 	// For now, just print the AST.
 	//fmt.Println((&parser.AstPrinter{}).Sprint(astTree))
-	fmt.Println(plugins.AstPrinter{}.Sprint(astTree))
+	//fmt.Println(plugins.AstPrinter{}.Sprint(astTree))
 	if lox.hadError {
 		return
 	}
 
 	// Trying to interpret.
-	result, err := lox.interpreter.Interpret(astTree)
+	err := lox.interpreter.Interpret(statements)
 	if err != nil {
 		lox.runtimeError(err)
 	}
-	fmt.Println(result)
 }
 
 func (lox *LoxGo) erro(line int, message string) {
