@@ -39,6 +39,7 @@ func generateAst(outputDir string) {
 		[]string{
 			"Block      : Statements []Stmt ",
 			"Expression : Expression Expr",
+			"If         : Condition Expr, ThenBranch Stmt, ElseBranch Stmt",
 			"Print      : Expression Expr",
 			"Var        : Name scanner.Token, Initializer Expr",
 		},

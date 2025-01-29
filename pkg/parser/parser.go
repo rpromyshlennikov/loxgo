@@ -55,6 +55,9 @@ func (p *Parser) declaration() (astTree ast.Stmt) {
 }
 
 func (p *Parser) statement() ast.Stmt {
+	if p.match(scanner.IF) {
+		return p.ifStatement()
+	}
 	if p.match(scanner.PRINT) {
 		return p.printStatement()
 	}
@@ -62,6 +65,20 @@ func (p *Parser) statement() ast.Stmt {
 		return ast.NewBlock(p.block())
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) ifStatement() ast.Stmt {
+	p.consume(scanner.LEFTPAREN, "Expect '(' after 'if'.")
+	condition := p.expression()
+	p.consume(scanner.RIGHTPAREN, "Expect ')' after if condition.")
+
+	thenBranch := p.statement()
+	var elseBranch ast.Stmt
+	if p.match(scanner.ELSE) {
+		elseBranch = p.statement()
+	}
+
+	return ast.NewIf(condition, thenBranch, elseBranch)
 }
 
 func (p *Parser) printStatement() ast.Stmt {

@@ -70,6 +70,18 @@ func (p AstPrinter) VisitExpression(stmt *ast.Expression) {
 	p.addResult(value.(string) + ";")
 }
 
+func (p AstPrinter) VisitIf(stmt *ast.If) {
+	value := stmt.Condition.Accept(p)
+	result := "if (" + value.(string) + ") then"
+	p.addResult(result)
+	stmt.ThenBranch.Accept(p)
+	if stmt.ElseBranch != nil {
+		p.addResult("else")
+		stmt.ThenBranch.Accept(p)
+		p.addResult("")
+	}
+}
+
 func (p AstPrinter) VisitPrint(stmt *ast.Print) {
 	value := stmt.Expression.Accept(p)
 	result := "print " + value.(string) + ";"

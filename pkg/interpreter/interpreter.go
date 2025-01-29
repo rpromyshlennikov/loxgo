@@ -183,6 +183,14 @@ func (i Interpreter) VisitExpression(stmt *ast.Expression) {
 	i.evaluate(stmt.Expression)
 }
 
+func (i Interpreter) VisitIf(stmt *ast.If) {
+	if i.isTruthy(i.evaluate(stmt.Condition)) {
+		i.execute(stmt.ThenBranch)
+	} else if stmt.ElseBranch != nil {
+		i.execute(stmt.ElseBranch)
+	}
+}
+
 func (i Interpreter) VisitPrint(stmt *ast.Print) {
 	value := i.evaluate(stmt.Expression)
 	strValue := i.stringify(value)

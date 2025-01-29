@@ -238,6 +238,85 @@ func TestInterpreter_Interpret(t *testing.T) {
 		}
 	})
 
+	t.Run("If statements works fine", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			sources string
+			want    string
+		}{
+			{
+				name: "truthy with else statement, going to then statement, ignoring else",
+				sources: `
+					var five = 5;
+					var six = 6;
+					if (five < six) {
+						print "five < six"; // <- going here
+					} else {
+						print "five >= six";
+					}`,
+				want: "five < six",
+			},
+			{
+				name: "not truthy with else statement, going to else statement, ignoring then",
+				sources: `
+					var five = 5;
+					var six = 6;
+					if (five > six) {
+						print "five > six";
+					} else {
+						print "five <= six"; // <- going here
+					}`,
+				want: "five <= six",
+			},
+			{
+				name: "truthy without else so going to then",
+				sources: `
+					var five = 5;
+					var six = 6;
+					if (five < six) {
+						print "five < six";
+					}`,
+				want: "five < six",
+			},
+			{
+				name: "not truthy without else so no execution at all",
+				sources: `
+					var five = 5;
+					var six = 6;
+					if (five > six) {
+						print "five > six";
+					}`,
+				want: "",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				// arrange
+				pprinter := plugins.NewAstPrinter()
+				scnr := scanner.NewScanner(
+					tt.sources,
+					nil,
+				)
+				prsr := parser.NewParser(scnr.ScanTokens(), nil)
+				parsed := prsr.Parse()
+				interp := NewInterpreter()
+
+				// act
+				err := interp.Interpret(parsed)
+
+				// assert
+				if err != nil {
+					t.Errorf("Interpret() return error: %s, but shouldn't", err)
+				}
+
+				got := *interp.lastPrintedValue
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("Interpret() = %v, want %v, ast %s", got, tt.want, pprinter.Sprint(parsed))
+				}
+			})
+		}
+	})
+
 	t.Run("Cannot interpret plus operator between string and number", func(t *testing.T) {
 		// arrange
 		pprinter := plugins.NewAstPrinter()
