@@ -165,37 +165,48 @@ func TestInterpreter_Interpret(t *testing.T) {
 	})
 
 	t.Run("Scoping and blocks works just fine", func(t *testing.T) {
-		// arrange
-		pprinter := plugins.NewAstPrinter()
-		scnr := scanner.NewScanner(
-			`
-			var a = "global a";
+		tests := []struct {
+			name    string
+			sources string
+			want    string
+		}{
 			{
-				var a = "outer a";
-				{
-					var a = "inner a";
-					print a;
-				}
-			}
-			`,
-			nil,
-		)
-		prsr := parser.NewParser(scnr.ScanTokens(), nil)
-		parsed := prsr.Parse()
-		interp := NewInterpreter()
-
-		// act
-		err := interp.Interpret(parsed)
-
-		// assert
-		if err != nil {
-			t.Errorf("Interpret() return error: %s, but shouldn't", err)
+				name: "Three nested blocks shadowing works fine",
+				sources: `
+					var a = "global a";
+					{
+						var a = "outer a";
+						{
+							var a = "inner a";
+							print a;
+						}
+					}
+				`,
+				want: "inner a",
+			},
 		}
-		want := "inner a"
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				// arrange
+				pprinter := plugins.NewAstPrinter()
+				scnr := scanner.NewScanner(tt.sources, nil)
+				prsr := parser.NewParser(scnr.ScanTokens(), nil)
+				parsed := prsr.Parse()
+				interp := NewInterpreter()
 
-		got := *interp.lastPrintedValue
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("Interpret() = %v, want %v, ast %s", got, want, pprinter.Sprint(parsed))
+				// act
+				err := interp.Interpret(parsed)
+
+				// assert
+				if err != nil {
+					t.Errorf("Interpret() return error: %s, but shouldn't", err)
+				}
+
+				got := *interp.lastPrintedValue
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("Interpret() = %v, want %v, ast %s", got, tt.want, pprinter.Sprint(parsed))
+				}
+			})
 		}
 	})
 
