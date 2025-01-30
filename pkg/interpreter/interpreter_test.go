@@ -199,7 +199,7 @@ func TestInterpreter_Interpret(t *testing.T) {
 				want: "global a",
 			},
 			{
-				name: "(xfail) Outer value can be set in nested blocks",
+				name: "Outer value can be set in nested blocks",
 				sources: `
 					var a = "global a";
 					{
