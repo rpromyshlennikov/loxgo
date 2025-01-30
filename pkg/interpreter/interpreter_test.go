@@ -171,11 +171,11 @@ func TestInterpreter_Interpret(t *testing.T) {
 			`
 			var a = "global a";
 			{
-			  var a = "outer a";
-			  {
-				var a = "inner a";
-				print a;
-			  }
+				var a = "outer a";
+				{
+					var a = "inner a";
+					print a;
+				}
 			}
 			`,
 			nil,
