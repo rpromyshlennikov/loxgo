@@ -184,6 +184,34 @@ func TestInterpreter_Interpret(t *testing.T) {
 				`,
 				want: "inner a",
 			},
+			{
+				name: "The nested shadowing variables does not rewrite most global value",
+				sources: `
+					var a = "global a";
+					{
+						var a = "outer a";
+						{
+							var a = "inner a";
+						}
+					}
+					print a;
+				`,
+				want: "global a",
+			},
+			{
+				name: "(xfail) Outer value can be set in nested blocks",
+				sources: `
+					var a = "global a";
+					{
+						var b = "middle b";
+						{
+							a = "inner a";
+						}
+					}
+					print a;
+				`,
+				want: "inner a",
+			},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
