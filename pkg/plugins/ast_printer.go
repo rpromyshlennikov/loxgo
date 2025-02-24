@@ -44,6 +44,10 @@ func (p AstPrinter) VisitBinary(binary *ast.Binary) any {
 	return p.parenthesize(binary.Operator.Lexeme(), binary.Left, binary.Right)
 }
 
+func (p AstPrinter) VisitLogical(logical *ast.Logical) any {
+	return p.parenthesize(logical.Operator.Lexeme(), logical.Left, logical.Right)
+}
+
 func (p AstPrinter) VisitLiteral(literal *ast.Literal) any {
 	if literal.Value == nil {
 		return "nil"

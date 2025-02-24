@@ -151,6 +151,21 @@ func (i Interpreter) VisitLiteral(literal *ast.Literal) any {
 	return literal.Value
 }
 
+func (i Interpreter) VisitLogical(logical *ast.Logical) any {
+	left := i.evaluate(logical.Left)
+	switch logical.Operator.Kind() {
+	case scanner.OR:
+		if i.isTruthy(left) {
+			return left
+		}
+	case scanner.AND:
+		if !i.isTruthy(left) {
+			return left
+		}
+	}
+	return i.evaluate(logical.Right)
+}
+
 func (i Interpreter) VisitGrouping(grouping *ast.Grouping) any {
 	return i.evaluate(grouping.Expression)
 }

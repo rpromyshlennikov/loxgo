@@ -13,6 +13,7 @@ type VisitorExpr interface {
 	VisitBinary(*Binary) any
 	VisitGrouping(*Grouping) any
 	VisitLiteral(*Literal) any
+	VisitLogical(*Logical) any
 	VisitUnary(*Unary) any
 	VisitVariable(*Variable) any
 }
@@ -84,6 +85,27 @@ func NewLiteral(value any) *Literal {
 
 func (l *Literal) Accept(visitor VisitorExpr) any {
 	return visitor.VisitLiteral(l)
+}
+
+type Logical struct {
+	// Left field.
+	Left Expr
+	// Operator field.
+	Operator scanner.Token
+	// Right field.
+	Right Expr
+}
+
+func NewLogical(left Expr, operator scanner.Token, right Expr) *Logical {
+	this := Logical{}
+	this.Left = left
+	this.Operator = operator
+	this.Right = right
+	return &this
+}
+
+func (l *Logical) Accept(visitor VisitorExpr) any {
+	return visitor.VisitLogical(l)
 }
 
 type Unary struct {

@@ -28,6 +28,7 @@ func generateAst(outputDir string) {
 			"Binary   : Left Expr, Operator scanner.Token, Right Expr",
 			"Grouping : Expression Expr",
 			"Literal  : Value any",
+			"Logical  : Left Expr, Operator scanner.Token, Right Expr",
 			"Unary    : Operator scanner.Token, Right Expr",
 			"Variable : Name scanner.Token",
 		},

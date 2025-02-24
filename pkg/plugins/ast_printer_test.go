@@ -40,4 +40,20 @@ func TestAstPrinter_Sprint(t *testing.T) {
 			t.Errorf("Sprint() = %v, want %v", got, want)
 		}
 	})
+
+	t.Run("Check statement with logical operator pretty printing", func(t *testing.T) {
+		expr := parser.NewParser(
+			scanner.NewScanner(
+				"x=x or (y=2);",
+				nil,
+			).ScanTokens(),
+			nil,
+		).Parse()
+
+		p := NewAstPrinter()
+		want := "x = (or x (group y = 2;));;"
+		if got := p.Sprint(expr); got != want {
+			t.Errorf("Sprint() = %v, want %v", got, want)
+		}
+	})
 }

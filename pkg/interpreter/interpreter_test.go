@@ -54,6 +54,150 @@ func TestInterpreter_Interpret(t *testing.T) {
 		}
 	})
 
+	t.Run("Logical OR operator works just fine", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			sources string
+			want    string
+		}{
+			{
+				name: "Basic success non-lazy execution on booleans",
+				sources: `
+					var a = false or true;
+					print a;
+				`,
+				want: "true",
+			},
+			{
+				name: "Basic success lazy execution",
+				sources: `
+					var x = 1;
+					var y = 0;
+					x = x or (y=2);
+					print x;
+					// ensure that y = 0, but not 2; it will be 2 in case of lack of laziness. 
+					if (y == 2) print y;
+				`,
+				want: "1",
+			},
+			{
+				name: "Second expression evaluates when first is not truthy: nil value",
+				sources: `
+					var x = nil;
+					var y = 0;
+					x = x or (y=2);
+					if (y == 2) print y;
+				`,
+				want: "2",
+			},
+			{
+				name: "Second expression evaluates when first is not truthy: false value",
+				sources: `
+					var x = false;
+					var y = 0;
+					x = x or (y=2);
+					if (y == 2) print y;
+				`,
+				want: "2",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				// arrange
+				pprinter := plugins.NewAstPrinter()
+				scnr := scanner.NewScanner(tt.sources, nil)
+				prsr := parser.NewParser(scnr.ScanTokens(), nil)
+				parsed := prsr.Parse()
+				interp := NewInterpreter()
+
+				// act
+				err := interp.Interpret(parsed)
+
+				// assert
+				if err != nil {
+					t.Errorf("Interpret() return error: %s, but shouldn't", err)
+				}
+
+				got := *interp.lastPrintedValue
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("Interpret() = %v, want %v, ast %s", got, tt.want, pprinter.Sprint(parsed))
+				}
+			})
+		}
+	})
+
+	t.Run("Logical AND operator works just fine", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			sources string
+			want    string
+		}{
+			{
+				name: "Basic success non-lazy execution on booleans",
+				sources: `
+					var a = true and false;
+					print a;
+				`,
+				want: "false",
+			},
+			{
+				name: "Basic success lazy execution",
+				sources: `
+					var x = nil;
+					var y = 0;
+					x = x and (y=2);
+					print x;
+					// ensure that y = 0, but not 2; it will be 2 in case of lack of laziness. 
+					if (y == 2) print y;
+				`,
+				want: "nil",
+			},
+			{
+				name: "Second expression evaluates when first is truthy: int value",
+				sources: `
+					var x = 1;
+					var y = 0;
+					x = x and (y=2);
+					if (y == 2) print y;
+				`,
+				want: "2",
+			},
+			{
+				name: "Second expression evaluates when first is truthy: true value",
+				sources: `
+					var x = true;
+					var y = 0;
+					x = x and (y=2);
+					if (y == 2) print y;
+				`,
+				want: "2",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				// arrange
+				pprinter := plugins.NewAstPrinter()
+				scnr := scanner.NewScanner(tt.sources, nil)
+				prsr := parser.NewParser(scnr.ScanTokens(), nil)
+				parsed := prsr.Parse()
+				interp := NewInterpreter()
+
+				// act
+				err := interp.Interpret(parsed)
+
+				// assert
+				if err != nil {
+					t.Errorf("Interpret() return error: %s, but shouldn't", err)
+				}
+
+				got := *interp.lastPrintedValue
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("Interpret() = %v, want %v, ast %s", got, tt.want, pprinter.Sprint(parsed))
+				}
+			})
+		}
+	})
+
 	t.Run("Arithmetic operations works fine", func(t *testing.T) {
 		// arrange
 		pprinter := plugins.NewAstPrinter()

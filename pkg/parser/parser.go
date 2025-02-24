@@ -113,7 +113,7 @@ func (p *Parser) block() []ast.Stmt {
 }
 
 func (p *Parser) assignment() ast.Expr {
-	expr := p.equality()
+	expr := p.or()
 	if p.match(scanner.EQUAL) {
 		equals := p.previous()
 		value := p.assignment()
@@ -124,6 +124,28 @@ func (p *Parser) assignment() ast.Expr {
 		}
 		name := variable.Name
 		return ast.NewAssign(name, value)
+	}
+	return expr
+}
+
+// Logical expressions.
+
+func (p *Parser) or() ast.Expr {
+	expr := p.and()
+	for p.match(scanner.OR) {
+		operator := p.previous()
+		right := p.and()
+		expr = ast.NewLogical(expr, operator, right)
+	}
+	return expr
+}
+
+func (p *Parser) and() ast.Expr {
+	expr := p.equality()
+	for p.match(scanner.AND) {
+		operator := p.previous()
+		right := p.equality()
+		expr = ast.NewLogical(expr, operator, right)
 	}
 	return expr
 }
