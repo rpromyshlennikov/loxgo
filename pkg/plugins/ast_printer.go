@@ -105,6 +105,13 @@ func (p AstPrinter) VisitAssign(expr *ast.Assign) any {
 	return result
 }
 
+func (p AstPrinter) VisitWhile(stmt *ast.While) {
+	value := stmt.Condition.Accept(p)
+	result := "while (" + value.(string) + ") "
+	p.addResult(result)
+	stmt.Body.Accept(p)
+}
+
 func (p AstPrinter) parenthesize(name string, exprs ...ast.Expr) any {
 	str := "(" + name
 	for _, expr := range exprs {

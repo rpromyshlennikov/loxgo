@@ -231,6 +231,12 @@ func (i Interpreter) VisitAssign(expr *ast.Assign) any {
 	return value
 }
 
+func (i Interpreter) VisitWhile(stmt *ast.While) {
+	for i.isTruthy(i.evaluate(stmt.Condition)) {
+		i.execute(stmt.Body)
+	}
+}
+
 func (i Interpreter) isTruthy(value any) bool {
 	if value == nil {
 		return false

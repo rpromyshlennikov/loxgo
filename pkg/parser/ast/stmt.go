@@ -14,6 +14,7 @@ type VisitorStmt interface {
 	VisitIf(*If)
 	VisitPrint(*Print)
 	VisitVar(*Var)
+	VisitWhile(*While)
 }
 
 type Block struct {
@@ -98,4 +99,22 @@ func NewVar(name scanner.Token, initializer Expr) *Var {
 
 func (v *Var) Accept(visitor VisitorStmt) {
 	visitor.VisitVar(v)
+}
+
+type While struct {
+	// Condition field.
+	Condition Expr
+	// Body field.
+	Body Stmt
+}
+
+func NewWhile(condition Expr, body Stmt) *While {
+	this := While{}
+	this.Condition = condition
+	this.Body = body
+	return &this
+}
+
+func (w *While) Accept(visitor VisitorStmt) {
+	visitor.VisitWhile(w)
 }
