@@ -518,6 +518,109 @@ func TestInterpreter_Interpret(t *testing.T) {
 		}
 	})
 
+	t.Run("For statements works fine", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			sources string
+			want    string
+		}{
+			{
+				name: "success repeating for condition is truthy",
+				sources: `
+					var x = 0;
+					for (var i = 0; i < 5; i = i + 1) {
+						x = i;
+					}
+					print x;
+					`,
+				want: "4",
+			},
+			{
+				name: "success repeating for condition is truthy and there is no initialization",
+				sources: `
+					var x = 0;
+					for (; x < 5; x = x + 1) {
+						// do nothing in cycle
+					}
+					print x;
+					`,
+				want: "5",
+			},
+			{
+				name: "success repeating for condition is truthy and there is expression initialization",
+				sources: `
+					var x = 0;
+					var i = 0;
+					for (i = 3; i < 5; i = i + 1) {
+						x = x + i;
+					}
+					print x;
+					`,
+				want: "7",
+			},
+			{
+				name: "success repeating for condition is truthy and there is no increment",
+				sources: `
+					var x = 0;
+					for (var i = 0; i < 5;) {
+						x = i;
+						i = i + 1;
+					}
+					print x;
+					`,
+				want: "4",
+			},
+			{
+				name: "success repeating for condition is truthy and there is no initialization and no increment",
+				sources: `
+					var x = 0;
+					for (; x < 5;) {
+						x = x + 1;
+					}
+					print x;
+					`,
+				want: "5",
+			},
+			{
+				name: "should not execute if for condition is NOT truthy",
+				sources: `
+					var x = 1;
+					for (var i = 0; i < 0; i = i + 1) {
+						x = i;
+					}
+					print x;
+					`,
+				want: "1",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				// arrange
+				pprinter := plugins.NewAstPrinter()
+				scnr := scanner.NewScanner(
+					tt.sources,
+					nil,
+				)
+				prsr := parser.NewParser(scnr.ScanTokens(), nil)
+				parsed := prsr.Parse()
+				interp := NewInterpreter()
+
+				// act
+				err := interp.Interpret(parsed)
+
+				// assert
+				if err != nil {
+					t.Errorf("Interpret() return error: %s, but shouldn't", err)
+				}
+
+				got := *interp.lastPrintedValue
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("Interpret() = %v, want %v, ast %s", got, tt.want, pprinter.Sprint(parsed))
+				}
+			})
+		}
+	})
+
 	t.Run("Cannot interpret plus operator between string and number", func(t *testing.T) {
 		// arrange
 		pprinter := plugins.NewAstPrinter()

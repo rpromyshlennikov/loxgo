@@ -55,6 +55,9 @@ func (p *Parser) declaration() (astTree ast.Stmt) {
 }
 
 func (p *Parser) statement() ast.Stmt {
+	if p.match(scanner.FOR) {
+		return p.forStatement()
+	}
 	if p.match(scanner.IF) {
 		return p.ifStatement()
 	}
@@ -68,6 +71,46 @@ func (p *Parser) statement() ast.Stmt {
 		return ast.NewBlock(p.block())
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) forStatement() ast.Stmt {
+	p.consume(scanner.LEFTPAREN, "Expect '(' after 'for'.")
+	var initializer ast.Stmt
+	switch {
+	case p.match(scanner.SEMICOLON):
+		// passing, there is no initializer, leaving as nil
+	case p.match(scanner.VAR):
+		initializer = p.varDeclaration()
+	default:
+		initializer = p.expressionStatement()
+	}
+
+	// setting infinity loop by default
+	var condition ast.Expr = ast.NewLiteral(true)
+	if !p.check(scanner.SEMICOLON) {
+		condition = p.expression()
+	}
+	p.consume(scanner.SEMICOLON, "Expect ';' after loop condition.")
+
+	var increment ast.Expr
+	if !p.check(scanner.RIGHTPAREN) {
+		increment = p.expression()
+	}
+	p.consume(scanner.RIGHTPAREN, "Expect ')' after for clauses.")
+
+	body := p.statement() // real for body
+
+	if increment != nil {
+		body = ast.NewBlock([]ast.Stmt{body, ast.NewExpression(increment)})
+	}
+
+	body = ast.NewWhile(condition, body)
+
+	if initializer != nil {
+		body = ast.NewBlock([]ast.Stmt{initializer, body})
+	}
+
+	return body
 }
 
 func (p *Parser) ifStatement() ast.Stmt {
