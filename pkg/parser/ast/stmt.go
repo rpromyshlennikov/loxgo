@@ -11,8 +11,10 @@ type Stmt interface {
 type VisitorStmt interface {
 	VisitBlock(*Block)
 	VisitExpression(*Expression)
+	VisitIf(*If)
 	VisitPrint(*Print)
 	VisitVar(*Var)
+	VisitWhile(*While)
 }
 
 type Block struct {
@@ -43,6 +45,27 @@ func NewExpression(expression Expr) *Expression {
 
 func (e *Expression) Accept(visitor VisitorStmt) {
 	visitor.VisitExpression(e)
+}
+
+type If struct {
+	// Condition field.
+	Condition Expr
+	// ThenBranch field.
+	ThenBranch Stmt
+	// ElseBranch field.
+	ElseBranch Stmt
+}
+
+func NewIf(condition Expr, thenBranch Stmt, elseBranch Stmt) *If {
+	this := If{}
+	this.Condition = condition
+	this.ThenBranch = thenBranch
+	this.ElseBranch = elseBranch
+	return &this
+}
+
+func (i *If) Accept(visitor VisitorStmt) {
+	visitor.VisitIf(i)
 }
 
 type Print struct {
@@ -76,4 +99,22 @@ func NewVar(name scanner.Token, initializer Expr) *Var {
 
 func (v *Var) Accept(visitor VisitorStmt) {
 	visitor.VisitVar(v)
+}
+
+type While struct {
+	// Condition field.
+	Condition Expr
+	// Body field.
+	Body Stmt
+}
+
+func NewWhile(condition Expr, body Stmt) *While {
+	this := While{}
+	this.Condition = condition
+	this.Body = body
+	return &this
+}
+
+func (w *While) Accept(visitor VisitorStmt) {
+	visitor.VisitWhile(w)
 }

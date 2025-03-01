@@ -55,13 +55,85 @@ func (p *Parser) declaration() (astTree ast.Stmt) {
 }
 
 func (p *Parser) statement() ast.Stmt {
+	if p.match(scanner.FOR) {
+		return p.forStatement()
+	}
+	if p.match(scanner.IF) {
+		return p.ifStatement()
+	}
 	if p.match(scanner.PRINT) {
 		return p.printStatement()
+	}
+	if p.match(scanner.WHILE) {
+		return p.whileStatement()
 	}
 	if p.match(scanner.LEFTBRACE) {
 		return ast.NewBlock(p.block())
 	}
 	return p.expressionStatement()
+}
+
+func (p *Parser) forStatement() ast.Stmt {
+	p.consume(scanner.LEFTPAREN, "Expect '(' after 'for'.")
+	var initializer ast.Stmt
+	switch {
+	case p.match(scanner.SEMICOLON):
+		// passing, there is no initializer, leaving as nil
+	case p.match(scanner.VAR):
+		initializer = p.varDeclaration()
+	default:
+		initializer = p.expressionStatement()
+	}
+
+	// setting infinity loop by default
+	var condition ast.Expr = ast.NewLiteral(true)
+	if !p.check(scanner.SEMICOLON) {
+		condition = p.expression()
+	}
+	p.consume(scanner.SEMICOLON, "Expect ';' after loop condition.")
+
+	var increment ast.Expr
+	if !p.check(scanner.RIGHTPAREN) {
+		increment = p.expression()
+	}
+	p.consume(scanner.RIGHTPAREN, "Expect ')' after for clauses.")
+
+	body := p.statement() // real for body
+
+	if increment != nil {
+		body = ast.NewBlock([]ast.Stmt{body, ast.NewExpression(increment)})
+	}
+
+	body = ast.NewWhile(condition, body)
+
+	if initializer != nil {
+		body = ast.NewBlock([]ast.Stmt{initializer, body})
+	}
+
+	return body
+}
+
+func (p *Parser) ifStatement() ast.Stmt {
+	p.consume(scanner.LEFTPAREN, "Expect '(' after 'if'.")
+	condition := p.expression()
+	p.consume(scanner.RIGHTPAREN, "Expect ')' after if condition.")
+
+	thenBranch := p.statement()
+	var elseBranch ast.Stmt
+	if p.match(scanner.ELSE) {
+		elseBranch = p.statement()
+	}
+
+	return ast.NewIf(condition, thenBranch, elseBranch)
+}
+
+func (p *Parser) whileStatement() ast.Stmt {
+	p.consume(scanner.LEFTPAREN, "Expect '(' after 'while'.")
+	condition := p.expression()
+	p.consume(scanner.RIGHTPAREN, "Expect ')' after while condition.")
+	body := p.statement()
+
+	return ast.NewWhile(condition, body)
 }
 
 func (p *Parser) printStatement() ast.Stmt {
@@ -96,7 +168,7 @@ func (p *Parser) block() []ast.Stmt {
 }
 
 func (p *Parser) assignment() ast.Expr {
-	expr := p.equality()
+	expr := p.or()
 	if p.match(scanner.EQUAL) {
 		equals := p.previous()
 		value := p.assignment()
@@ -107,6 +179,28 @@ func (p *Parser) assignment() ast.Expr {
 		}
 		name := variable.Name
 		return ast.NewAssign(name, value)
+	}
+	return expr
+}
+
+// Logical expressions.
+
+func (p *Parser) or() ast.Expr {
+	expr := p.and()
+	for p.match(scanner.OR) {
+		operator := p.previous()
+		right := p.and()
+		expr = ast.NewLogical(expr, operator, right)
+	}
+	return expr
+}
+
+func (p *Parser) and() ast.Expr {
+	expr := p.equality()
+	for p.match(scanner.AND) {
+		operator := p.previous()
+		right := p.equality()
+		expr = ast.NewLogical(expr, operator, right)
 	}
 	return expr
 }

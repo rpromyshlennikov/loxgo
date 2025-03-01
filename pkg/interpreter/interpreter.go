@@ -151,6 +151,21 @@ func (i Interpreter) VisitLiteral(literal *ast.Literal) any {
 	return literal.Value
 }
 
+func (i Interpreter) VisitLogical(logical *ast.Logical) any {
+	left := i.evaluate(logical.Left)
+	switch logical.Operator.Kind() {
+	case scanner.OR:
+		if i.isTruthy(left) {
+			return left
+		}
+	case scanner.AND:
+		if !i.isTruthy(left) {
+			return left
+		}
+	}
+	return i.evaluate(logical.Right)
+}
+
 func (i Interpreter) VisitGrouping(grouping *ast.Grouping) any {
 	return i.evaluate(grouping.Expression)
 }
@@ -183,6 +198,14 @@ func (i Interpreter) VisitExpression(stmt *ast.Expression) {
 	i.evaluate(stmt.Expression)
 }
 
+func (i Interpreter) VisitIf(stmt *ast.If) {
+	if i.isTruthy(i.evaluate(stmt.Condition)) {
+		i.execute(stmt.ThenBranch)
+	} else if stmt.ElseBranch != nil {
+		i.execute(stmt.ElseBranch)
+	}
+}
+
 func (i Interpreter) VisitPrint(stmt *ast.Print) {
 	value := i.evaluate(stmt.Expression)
 	strValue := i.stringify(value)
@@ -206,6 +229,12 @@ func (i Interpreter) VisitAssign(expr *ast.Assign) any {
 	}
 
 	return value
+}
+
+func (i Interpreter) VisitWhile(stmt *ast.While) {
+	for i.isTruthy(i.evaluate(stmt.Condition)) {
+		i.execute(stmt.Body)
+	}
 }
 
 func (i Interpreter) isTruthy(value any) bool {

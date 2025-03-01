@@ -28,6 +28,7 @@ func generateAst(outputDir string) {
 			"Binary   : Left Expr, Operator scanner.Token, Right Expr",
 			"Grouping : Expression Expr",
 			"Literal  : Value any",
+			"Logical  : Left Expr, Operator scanner.Token, Right Expr",
 			"Unary    : Operator scanner.Token, Right Expr",
 			"Variable : Name scanner.Token",
 		},
@@ -39,8 +40,10 @@ func generateAst(outputDir string) {
 		[]string{
 			"Block      : Statements []Stmt ",
 			"Expression : Expression Expr",
+			"If         : Condition Expr, ThenBranch Stmt, ElseBranch Stmt",
 			"Print      : Expression Expr",
 			"Var        : Name scanner.Token, Initializer Expr",
+			"While      : Condition Expr, Body Stmt",
 		},
 	)
 }

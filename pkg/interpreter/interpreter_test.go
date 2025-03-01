@@ -54,6 +54,150 @@ func TestInterpreter_Interpret(t *testing.T) {
 		}
 	})
 
+	t.Run("Logical OR operator works just fine", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			sources string
+			want    string
+		}{
+			{
+				name: "Basic success non-lazy execution on booleans",
+				sources: `
+					var a = false or true;
+					print a;
+				`,
+				want: "true",
+			},
+			{
+				name: "Basic success lazy execution",
+				sources: `
+					var x = 1;
+					var y = 0;
+					x = x or (y=2);
+					print x;
+					// ensure that y = 0, but not 2; it will be 2 in case of lack of laziness. 
+					if (y == 2) print y;
+				`,
+				want: "1",
+			},
+			{
+				name: "Second expression evaluates when first is not truthy: nil value",
+				sources: `
+					var x = nil;
+					var y = 0;
+					x = x or (y=2);
+					if (y == 2) print y;
+				`,
+				want: "2",
+			},
+			{
+				name: "Second expression evaluates when first is not truthy: false value",
+				sources: `
+					var x = false;
+					var y = 0;
+					x = x or (y=2);
+					if (y == 2) print y;
+				`,
+				want: "2",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				// arrange
+				pprinter := plugins.NewAstPrinter()
+				scnr := scanner.NewScanner(tt.sources, nil)
+				prsr := parser.NewParser(scnr.ScanTokens(), nil)
+				parsed := prsr.Parse()
+				interp := NewInterpreter()
+
+				// act
+				err := interp.Interpret(parsed)
+
+				// assert
+				if err != nil {
+					t.Errorf("Interpret() return error: %s, but shouldn't", err)
+				}
+
+				got := *interp.lastPrintedValue
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("Interpret() = %v, want %v, ast %s", got, tt.want, pprinter.Sprint(parsed))
+				}
+			})
+		}
+	})
+
+	t.Run("Logical AND operator works just fine", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			sources string
+			want    string
+		}{
+			{
+				name: "Basic success non-lazy execution on booleans",
+				sources: `
+					var a = true and false;
+					print a;
+				`,
+				want: "false",
+			},
+			{
+				name: "Basic success lazy execution",
+				sources: `
+					var x = nil;
+					var y = 0;
+					x = x and (y=2);
+					print x;
+					// ensure that y = 0, but not 2; it will be 2 in case of lack of laziness. 
+					if (y == 2) print y;
+				`,
+				want: "nil",
+			},
+			{
+				name: "Second expression evaluates when first is truthy: int value",
+				sources: `
+					var x = 1;
+					var y = 0;
+					x = x and (y=2);
+					if (y == 2) print y;
+				`,
+				want: "2",
+			},
+			{
+				name: "Second expression evaluates when first is truthy: true value",
+				sources: `
+					var x = true;
+					var y = 0;
+					x = x and (y=2);
+					if (y == 2) print y;
+				`,
+				want: "2",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				// arrange
+				pprinter := plugins.NewAstPrinter()
+				scnr := scanner.NewScanner(tt.sources, nil)
+				prsr := parser.NewParser(scnr.ScanTokens(), nil)
+				parsed := prsr.Parse()
+				interp := NewInterpreter()
+
+				// act
+				err := interp.Interpret(parsed)
+
+				// assert
+				if err != nil {
+					t.Errorf("Interpret() return error: %s, but shouldn't", err)
+				}
+
+				got := *interp.lastPrintedValue
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("Interpret() = %v, want %v, ast %s", got, tt.want, pprinter.Sprint(parsed))
+				}
+			})
+		}
+	})
+
 	t.Run("Arithmetic operations works fine", func(t *testing.T) {
 		// arrange
 		pprinter := plugins.NewAstPrinter()
@@ -165,37 +309,315 @@ func TestInterpreter_Interpret(t *testing.T) {
 	})
 
 	t.Run("Scoping and blocks works just fine", func(t *testing.T) {
-		// arrange
-		pprinter := plugins.NewAstPrinter()
-		scnr := scanner.NewScanner(
-			`
-			var a = "global a";
+		tests := []struct {
+			name    string
+			sources string
+			want    string
+		}{
 			{
-			  var a = "outer a";
-			  {
-				var a = "inner a";
-				print a;
-			  }
-			}
-			`,
-			nil,
-		)
-		prsr := parser.NewParser(scnr.ScanTokens(), nil)
-		parsed := prsr.Parse()
-		interp := NewInterpreter()
-
-		// act
-		err := interp.Interpret(parsed)
-
-		// assert
-		if err != nil {
-			t.Errorf("Interpret() return error: %s, but shouldn't", err)
+				name: "Three nested blocks shadowing works fine",
+				sources: `
+					var a = "global a";
+					{
+						var a = "outer a";
+						{
+							var a = "inner a";
+							print a;
+						}
+					}
+				`,
+				want: "inner a",
+			},
+			{
+				name: "The nested shadowing variables does not rewrite most global value",
+				sources: `
+					var a = "global a";
+					{
+						var a = "outer a";
+						{
+							var a = "inner a";
+						}
+					}
+					print a;
+				`,
+				want: "global a",
+			},
+			{
+				name: "Outer value can be set in nested blocks",
+				sources: `
+					var a = "global a";
+					{
+						var b = "middle b";
+						{
+							a = "inner a";
+						}
+					}
+					print a;
+				`,
+				want: "inner a",
+			},
 		}
-		want := "inner a"
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				// arrange
+				pprinter := plugins.NewAstPrinter()
+				scnr := scanner.NewScanner(tt.sources, nil)
+				prsr := parser.NewParser(scnr.ScanTokens(), nil)
+				parsed := prsr.Parse()
+				interp := NewInterpreter()
 
-		got := *interp.lastPrintedValue
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("Interpret() = %v, want %v, ast %s", got, want, pprinter.Sprint(parsed))
+				// act
+				err := interp.Interpret(parsed)
+
+				// assert
+				if err != nil {
+					t.Errorf("Interpret() return error: %s, but shouldn't", err)
+				}
+
+				got := *interp.lastPrintedValue
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("Interpret() = %v, want %v, ast %s", got, tt.want, pprinter.Sprint(parsed))
+				}
+			})
+		}
+	})
+
+	t.Run("If statements works fine", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			sources string
+			want    string
+		}{
+			{
+				name: "truthy with else statement, going to then statement, ignoring else",
+				sources: `
+					var five = 5;
+					var six = 6;
+					if (five < six) {
+						print "five < six"; // <- going here
+					} else {
+						print "five >= six";
+					}`,
+				want: "five < six",
+			},
+			{
+				name: "not truthy with else statement, going to else statement, ignoring then",
+				sources: `
+					var five = 5;
+					var six = 6;
+					if (five > six) {
+						print "five > six";
+					} else {
+						print "five <= six"; // <- going here
+					}`,
+				want: "five <= six",
+			},
+			{
+				name: "truthy without else so going to then",
+				sources: `
+					var five = 5;
+					var six = 6;
+					if (five < six) {
+						print "five < six";
+					}`,
+				want: "five < six",
+			},
+			{
+				name: "not truthy without else so no execution at all",
+				sources: `
+					var five = 5;
+					var six = 6;
+					if (five > six) {
+						print "five > six";
+					}`,
+				want: "",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				// arrange
+				pprinter := plugins.NewAstPrinter()
+				scnr := scanner.NewScanner(
+					tt.sources,
+					nil,
+				)
+				prsr := parser.NewParser(scnr.ScanTokens(), nil)
+				parsed := prsr.Parse()
+				interp := NewInterpreter()
+
+				// act
+				err := interp.Interpret(parsed)
+
+				// assert
+				if err != nil {
+					t.Errorf("Interpret() return error: %s, but shouldn't", err)
+				}
+
+				got := *interp.lastPrintedValue
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("Interpret() = %v, want %v, ast %s", got, tt.want, pprinter.Sprint(parsed))
+				}
+			})
+		}
+	})
+
+	t.Run("While statements works fine", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			sources string
+			want    string
+		}{
+			{
+				name: "success repeating while condition is truthy",
+				sources: `
+					var x = 0;
+					while (x < 5) {
+						x = x + 1;
+					}
+					print x;
+					`,
+				want: "5",
+			},
+			{
+				name: "should not execute while condition is NOT truthy",
+				sources: `
+					var x = 1;
+					while (x < 0) {
+						x = x + 1;
+					}
+					print x;
+					`,
+				want: "1",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				// arrange
+				pprinter := plugins.NewAstPrinter()
+				scnr := scanner.NewScanner(
+					tt.sources,
+					nil,
+				)
+				prsr := parser.NewParser(scnr.ScanTokens(), nil)
+				parsed := prsr.Parse()
+				interp := NewInterpreter()
+
+				// act
+				err := interp.Interpret(parsed)
+
+				// assert
+				if err != nil {
+					t.Errorf("Interpret() return error: %s, but shouldn't", err)
+				}
+
+				got := *interp.lastPrintedValue
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("Interpret() = %v, want %v, ast %s", got, tt.want, pprinter.Sprint(parsed))
+				}
+			})
+		}
+	})
+
+	t.Run("For statements works fine", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			sources string
+			want    string
+		}{
+			{
+				name: "success repeating for condition is truthy",
+				sources: `
+					var x = 0;
+					for (var i = 0; i < 5; i = i + 1) {
+						x = i;
+					}
+					print x;
+					`,
+				want: "4",
+			},
+			{
+				name: "success repeating for condition is truthy and there is no initialization",
+				sources: `
+					var x = 0;
+					for (; x < 5; x = x + 1) {
+						// do nothing in cycle
+					}
+					print x;
+					`,
+				want: "5",
+			},
+			{
+				name: "success repeating for condition is truthy and there is expression initialization",
+				sources: `
+					var x = 0;
+					var i = 0;
+					for (i = 3; i < 5; i = i + 1) {
+						x = x + i;
+					}
+					print x;
+					`,
+				want: "7",
+			},
+			{
+				name: "success repeating for condition is truthy and there is no increment",
+				sources: `
+					var x = 0;
+					for (var i = 0; i < 5;) {
+						x = i;
+						i = i + 1;
+					}
+					print x;
+					`,
+				want: "4",
+			},
+			{
+				name: "success repeating for condition is truthy and there is no initialization and no increment",
+				sources: `
+					var x = 0;
+					for (; x < 5;) {
+						x = x + 1;
+					}
+					print x;
+					`,
+				want: "5",
+			},
+			{
+				name: "should not execute if for condition is NOT truthy",
+				sources: `
+					var x = 1;
+					for (var i = 0; i < 0; i = i + 1) {
+						x = i;
+					}
+					print x;
+					`,
+				want: "1",
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				// arrange
+				pprinter := plugins.NewAstPrinter()
+				scnr := scanner.NewScanner(
+					tt.sources,
+					nil,
+				)
+				prsr := parser.NewParser(scnr.ScanTokens(), nil)
+				parsed := prsr.Parse()
+				interp := NewInterpreter()
+
+				// act
+				err := interp.Interpret(parsed)
+
+				// assert
+				if err != nil {
+					t.Errorf("Interpret() return error: %s, but shouldn't", err)
+				}
+
+				got := *interp.lastPrintedValue
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("Interpret() = %v, want %v, ast %s", got, tt.want, pprinter.Sprint(parsed))
+				}
+			})
 		}
 	})
 

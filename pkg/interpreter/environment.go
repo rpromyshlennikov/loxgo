@@ -40,7 +40,7 @@ func (e Environment) assign(name scanner.Token, value any) error {
 		return nil
 	}
 	if e.enclosing != nil {
-		e.enclosing.assign(name, value)
+		return e.enclosing.assign(name, value)
 	}
 	return NewRuntimeError(
 		name,

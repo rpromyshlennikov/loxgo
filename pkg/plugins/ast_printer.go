@@ -44,6 +44,10 @@ func (p AstPrinter) VisitBinary(binary *ast.Binary) any {
 	return p.parenthesize(binary.Operator.Lexeme(), binary.Left, binary.Right)
 }
 
+func (p AstPrinter) VisitLogical(logical *ast.Logical) any {
+	return p.parenthesize(logical.Operator.Lexeme(), logical.Left, logical.Right)
+}
+
 func (p AstPrinter) VisitLiteral(literal *ast.Literal) any {
 	if literal.Value == nil {
 		return "nil"
@@ -70,6 +74,18 @@ func (p AstPrinter) VisitExpression(stmt *ast.Expression) {
 	p.addResult(value.(string) + ";")
 }
 
+func (p AstPrinter) VisitIf(stmt *ast.If) {
+	value := stmt.Condition.Accept(p)
+	result := "if (" + value.(string) + ") then"
+	p.addResult(result)
+	stmt.ThenBranch.Accept(p)
+	if stmt.ElseBranch != nil {
+		p.addResult("else")
+		stmt.ThenBranch.Accept(p)
+		p.addResult("")
+	}
+}
+
 func (p AstPrinter) VisitPrint(stmt *ast.Print) {
 	value := stmt.Expression.Accept(p)
 	result := "print " + value.(string) + ";"
@@ -87,6 +103,13 @@ func (p AstPrinter) VisitAssign(expr *ast.Assign) any {
 	result := expr.Name.Lexeme() + " = " + value.(string) + ";"
 
 	return result
+}
+
+func (p AstPrinter) VisitWhile(stmt *ast.While) {
+	value := stmt.Condition.Accept(p)
+	result := "while (" + value.(string) + ") "
+	p.addResult(result)
+	stmt.Body.Accept(p)
 }
 
 func (p AstPrinter) parenthesize(name string, exprs ...ast.Expr) any {
